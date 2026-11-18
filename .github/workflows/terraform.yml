@@ -1,0 +1,112 @@
+name: terraform
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Work out which modules changed. A module is any top-level directory
+  # containing a versions.tf. Changes to shared files that affect every
+  # module (the Terraform pin or this workflow) select all modules.
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.changed.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: changed
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          all_modules=$(find . -mindepth 2 -maxdepth 2 -name versions.tf -not -path './.git/*' \
+            | xargs -n1 dirname | sed 's|^\./||' | sort)
+
+          if [ "$EVENT" = "pull_request" ]; then
+            base="$PR_BASE"
+          else
+            base="$PUSH_BEFORE"
+          fi
+
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] \
+             || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "No usable base commit; checking all modules."
+            selected="$all_modules"
+          else
+            changed_files=$(git diff --name-only "$base" HEAD)
+            echo "Changed files:"; echo "$changed_files" | sed 's/^/  /'
+
+            if echo "$changed_files" | grep -qxE '\.terraform-version|\.github/workflows/terraform\.yml'; then
+              echo "Shared file changed; checking all modules."
+              selected="$all_modules"
+            else
+              changed_dirs=$(echo "$changed_files" | grep '/' | cut -d/ -f1 | sort -u)
+              selected=$(comm -12 <(echo "$all_modules") <(echo "$changed_dirs"))
+            fi
+          fi
+
+          modules=$(echo "$selected" | sed '/^$/d' | jq -R . | jq -cs .)
+          echo "Modules to check: $modules"
+          echo "modules=$modules" >> "$GITHUB_OUTPUT"
+
+  validate:
+    name: validate (${{ matrix.module }})
+    needs: discover
+    if: needs.discover.outputs.modules != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover.outputs.modules) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: tfversion
+        working-directory: .
+        run: echo "version=$(cat .terraform-version)" >> "$GITHUB_OUTPUT"
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ steps.tfversion.outputs.version }}
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive -diff
+
+      - name: terraform init
+        run: terraform init -backend=false -input=false
+
+      - name: terraform validate
+        run: terraform validate -no-color
+
+  # Single, stable status check to require in branch protection, so adding a
+  # module never requires changing the ruleset. Passes when no module changed
+  # (validate is skipped), e.g. README-only PRs.
+  checks:
+    name: terraform-checks
+    needs: [discover, validate]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: All module checks passed
+        env:
+          DISCOVER: ${{ needs.discover.result }}
+          VALIDATE: ${{ needs.validate.result }}
+        run: |
+          echo "discover=$DISCOVER validate=$VALIDATE"
+          if [ "$DISCOVER" != "success" ]; then exit 1; fi
+          if [ "$VALIDATE" != "success" ] && [ "$VALIDATE" != "skipped" ]; then exit 1; fi
