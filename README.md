@@ -79,7 +79,7 @@ echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> ~/.bashrc   # or ~/.zshrc
 Then install and select a version:
 
 ```sh
-tfenv install latest      # or a specific version, e.g. tfenv install 1.16.6
+tfenv install latest      # or a specific version, e.g. tfenv install 1.17.2
 tfenv use latest
 terraform version
 ```
