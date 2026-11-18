@@ -313,6 +313,13 @@ When planning your subnet CIDRs, consider:
 | Private | c | x.x.102.0/24 | x.x.102.1 - x.x.102.254 |
 | *Reserved* | - | x.x.200.0/24+ | Future use |
 
+## Requirements
+
+| Name | Version |
+|------|---------|
+| terraform | >= 1.5.0 |
+| aws | >= 6.0 |
+
 ## Inputs
 
 | Name | Description | Type | Default | Required |
