@@ -110,3 +110,7 @@ When adding a module:
 - Give every variable and output a `description`, and use defaults that are safe without changes
 - Don't hardcode account IDs, regions, or names; take them as inputs or look them up with data sources
 - Add the module to the table above
+
+---
+
+<sub>Developed with the help of AI coding tools; reviewed and maintained by the author.</sub>
