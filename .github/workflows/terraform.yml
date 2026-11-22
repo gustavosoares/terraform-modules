@@ -93,6 +93,11 @@ jobs:
       - name: terraform validate
         run: terraform validate -no-color
 
+      # Tests use a mocked AWS provider, so they need no credentials.
+      - name: terraform test
+        if: hashFiles(format('{0}/tests/*.tftest.hcl', matrix.module)) != ''
+        run: terraform test -no-color
+
   # Single, stable status check to require in branch protection, so adding a
   # module never requires changing the ruleset. Passes when no module changed
   # (validate is skipped), e.g. README-only PRs.

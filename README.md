@@ -107,13 +107,17 @@ Before opening a pull request, run these in the changed module's directory:
 terraform fmt -recursive
 terraform init -backend=false
 terraform validate
+terraform test
 ```
+
+`terraform test` runs the module's `tests/*.tftest.hcl` against a mocked AWS provider, so it needs no AWS credentials and creates nothing. CI runs the same checks. The tests use `mock_provider` and `state_key`, so they need Terraform 1.9 or later (the pinned development version is newer); the modules themselves still support >= 1.5.0.
 
 When adding a module:
 
 - Put it in its own top-level directory with `main.tf`, `variables.tf`, `outputs.tf`, `versions.tf`, and a `README.md`
 - Give every variable and output a `description`, and use defaults that are safe without changes
 - Don't hardcode account IDs, regions, or names; take them as inputs or look them up with data sources
+- Add mocked tests in `tests/` covering the defaults, each optional feature, and every validation and precondition
 - Add the module to the table above
 
 ---
