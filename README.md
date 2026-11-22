@@ -7,6 +7,8 @@ A collection of small, reusable Terraform modules for AWS. Each module is secure
 | Module | Description |
 |--------|-------------|
 | [vpc](./vpc) | VPC with public/private subnets per AZ, single or per-AZ NAT gateways, optional VPN gateway, and optional VPC Flow Logs to S3 |
+| [autoscaling](./autoscaling) | EC2 Auto Scaling Group with launch template, security group, IAM instance profile, scaling policies, Spot/mixed instances, warm pools, and instance refresh |
+| [ec2-instance](./ec2-instance) | Single EC2 instance with security group, IAM role/instance profile, IMDSv2 and encrypted root volume by default, and an optional stop/start schedule |
 | [s3-bucket](./s3-bucket) | S3 bucket with SSE-KMS by default, public access blocked, lifecycle rules and storage-class transitions, access logging, CloudFront OAC, cross-account KMS, and EKS IRSA access |
 
 See each module's README for its inputs, outputs, and usage examples.
