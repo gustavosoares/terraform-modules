@@ -10,6 +10,7 @@ A collection of small, reusable Terraform modules for AWS. Each module is secure
 | [autoscaling](./autoscaling) | EC2 Auto Scaling Group with launch template, security group, IAM instance profile, scaling policies, Spot/mixed instances, warm pools, and instance refresh |
 | [ec2-instance](./ec2-instance) | Single EC2 instance with security group, IAM role/instance profile, IMDSv2 and encrypted root volume by default, and an optional stop/start schedule |
 | [s3-bucket](./s3-bucket) | S3 bucket with SSE-KMS by default, public access blocked, lifecycle rules and storage-class transitions, access logging, CloudFront OAC, cross-account KMS, and EKS IRSA access |
+| [lambda-function](./lambda-function) | Lambda function with a least-privilege role and managed log group, zip/S3/container code (or CI-deployed), optional VPC access, SQS and schedule triggers, async dead-letter queue, and an errors alarm |
 | [ecr](./ecr) | ECR repository with immutable tags, scan on push, lifecycle cleanup, and optional cross-account and Lambda pull access |
 | [secrets-manager](./secrets-manager) | Secrets Manager secret with optional KMS, replication, initial value, cross-account resource policy, and a ready-made read policy output |
 
