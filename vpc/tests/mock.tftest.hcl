@@ -204,3 +204,41 @@ run "invalid_traffic_type" {
   }
   expect_failures = [var.flow_logs_traffic_type]
 }
+
+run "nat_gateway_az_without_public_subnet" {
+  command = plan
+  variables {
+    nat_gateway_az = "us-east-1c"
+  }
+  expect_failures = [aws_vpc.main]
+}
+
+run "nat_per_az_private_only_az" {
+  command = plan
+  variables {
+    single_nat_gateway = false
+    private_subnets = {
+      "us-east-1a" = "10.0.101.0/24"
+      "us-east-1c" = "10.0.103.0/24"
+    }
+  }
+  expect_failures = [aws_vpc.main]
+}
+
+# Without NAT gateways, private-only AZs and an unused nat_gateway_az are fine.
+run "private_only_az_without_nat" {
+  command = plan
+  variables {
+    enable_nat_gateway = false
+    single_nat_gateway = false
+    nat_gateway_az     = "us-east-1c"
+    private_subnets = {
+      "us-east-1a" = "10.0.101.0/24"
+      "us-east-1c" = "10.0.103.0/24"
+    }
+  }
+  assert {
+    condition     = length(aws_subnet.private) == 2 && length(aws_nat_gateway.main) == 0
+    error_message = "Private-only AZs should be allowed when NAT is disabled."
+  }
+}

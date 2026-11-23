@@ -153,6 +153,8 @@ module "vpc" {
 | Single NAT | `true` (default) | ~$32/month | Single point of failure | Dev/Test, cost-sensitive |
 | NAT per AZ | `false` | ~$32/month × AZs | Highly available | Production |
 
+NAT gateways live in public subnets, so `nat_gateway_az` must be one of the `public_subnets` AZs, and with `single_nat_gateway = false` every `private_subnets` AZ needs a public subnet too. The module checks both at plan time.
+
 ### Three Availability Zones
 
 ```hcl
