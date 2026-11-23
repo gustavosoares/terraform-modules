@@ -110,7 +110,9 @@ terraform validate
 terraform test
 ```
 
-`terraform test` runs the module's `tests/*.tftest.hcl` against a mocked AWS provider, so it needs no AWS credentials and creates nothing. CI runs the same checks. The tests use `mock_provider` and `state_key`, so they need Terraform 1.9 or later (the pinned development version is newer); the modules themselves still support >= 1.5.0.
+`terraform test` runs the module's `tests/*.tftest.hcl` against a mocked AWS provider, so it needs no AWS credentials and creates nothing. The tests use `mock_provider` and `state_key`, so they need Terraform 1.9 or later (the pinned development version is newer); the modules themselves still support >= 1.5.0.
+
+CI runs these checks, plus `init` and `validate` in each `examples/*` folder, for every module a pull request changes. It also checks modules that use a changed module as a local source, such as an example with `source = "../../../ecr"`. Changes to `.terraform-version` or the workflow check every module.
 
 When adding a module:
 

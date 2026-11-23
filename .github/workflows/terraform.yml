@@ -57,6 +57,25 @@ jobs:
             fi
           fi
 
+          # Also check modules whose code or examples use a selected module as a
+          # local source (e.g. source = "../../../ecr"), repeating until no new
+          # module is added, so a change can't silently break its users.
+          while :; do
+            added=""
+            for m in $all_modules; do
+              echo "$selected" | grep -qx "$m" && continue
+              for dep in $selected; do
+                if grep -rqE "source[[:space:]]*=[[:space:]]*\"(\.\./)+${dep}(/|\")" "$m" --include='*.tf'; then
+                  added="$added $m"
+                  break
+                fi
+              done
+            done
+            [ -z "$added" ] && break
+            echo "Uses a changed module:$added"
+            selected=$(printf '%s\n' $selected $added | sort -u)
+          done
+
           modules=$(echo "$selected" | sed '/^$/d' | jq -R . | jq -cs .)
           echo "Modules to check: $modules"
           echo "modules=$modules" >> "$GITHUB_OUTPUT"
@@ -92,6 +111,18 @@ jobs:
 
       - name: terraform validate
         run: terraform validate -no-color
+
+      # Each examples/<name> folder is a root configuration; validate it too.
+      - name: terraform validate examples
+        if: hashFiles(format('{0}/examples/*/*.tf', matrix.module)) != ''
+        run: |
+          for dir in examples/*/; do
+            ls "$dir"*.tf >/dev/null 2>&1 || continue
+            echo "::group::$dir"
+            terraform -chdir="$dir" init -backend=false -input=false
+            terraform -chdir="$dir" validate -no-color
+            echo "::endgroup::"
+          done
 
       # Tests use a mocked AWS provider, so they need no credentials.
       - name: terraform test
