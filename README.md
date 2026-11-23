@@ -10,6 +10,9 @@ A collection of small, reusable Terraform modules for AWS. Each module is secure
 | [autoscaling](./autoscaling) | EC2 Auto Scaling Group with launch template, security group, IAM instance profile, scaling policies, Spot/mixed instances, warm pools, and instance refresh |
 | [ec2-instance](./ec2-instance) | Single EC2 instance with security group, IAM role/instance profile, IMDSv2 and encrypted root volume by default, and an optional stop/start schedule |
 | [s3-bucket](./s3-bucket) | S3 bucket with SSE-KMS by default, public access blocked, lifecycle rules and storage-class transitions, access logging, CloudFront OAC, cross-account KMS, and EKS IRSA access |
+| [lambda-function](./lambda-function) | Lambda function with a least-privilege role and managed log group, zip/S3/container code (or CI-deployed), optional VPC access, SQS and schedule triggers, async dead-letter queue, and an errors alarm |
+| [ecr](./ecr) | ECR repository with immutable tags, scan on push, lifecycle cleanup, and optional cross-account and Lambda pull access |
+| [secrets-manager](./secrets-manager) | Secrets Manager secret with optional KMS, replication, initial value, cross-account resource policy, and a ready-made read policy output |
 
 See each module's README for its inputs, outputs, and usage examples.
 
@@ -104,13 +107,19 @@ Before opening a pull request, run these in the changed module's directory:
 terraform fmt -recursive
 terraform init -backend=false
 terraform validate
+terraform test
 ```
+
+`terraform test` runs the module's `tests/*.tftest.hcl` against a mocked AWS provider, so it needs no AWS credentials and creates nothing. The tests use `mock_provider` and `state_key`, so they need Terraform 1.9 or later (the pinned development version is newer); the modules themselves still support >= 1.5.0.
+
+CI runs these checks, plus `init` and `validate` in each `examples/*` folder, for every module a pull request changes. It also checks modules that use a changed module as a local source, such as an example with `source = "../../../ecr"`. Changes to `.terraform-version` or the workflow check every module.
 
 When adding a module:
 
 - Put it in its own top-level directory with `main.tf`, `variables.tf`, `outputs.tf`, `versions.tf`, and a `README.md`
 - Give every variable and output a `description`, and use defaults that are safe without changes
 - Don't hardcode account IDs, regions, or names; take them as inputs or look them up with data sources
+- Add mocked tests in `tests/` covering the defaults, each optional feature, and every validation and precondition
 - Add the module to the table above
 
 ---

@@ -33,6 +33,20 @@ resource "aws_vpc" "main" {
   tags = merge(var.tags, {
     Name = var.vpc_name
   })
+
+  # Checked here because every other resource depends on the VPC, so a bad
+  # combination fails with a clear message instead of an index error later.
+  lifecycle {
+    precondition {
+      condition     = !var.enable_nat_gateway || !var.single_nat_gateway || contains(keys(var.public_subnets), local.nat_gateway_az)
+      error_message = "nat_gateway_az must be one of the public_subnets AZs, because the NAT gateway is placed in that AZ's public subnet."
+    }
+
+    precondition {
+      condition     = !var.enable_nat_gateway || var.single_nat_gateway || length(setsubtract(keys(var.private_subnets), keys(var.public_subnets))) == 0
+      error_message = "With single_nat_gateway = false, every private_subnets AZ needs a public subnet for its NAT gateway. Missing public subnets in: ${join(", ", sort(setsubtract(keys(var.private_subnets), keys(var.public_subnets))))}."
+    }
+  }
 }
 
 # =============================================================================
